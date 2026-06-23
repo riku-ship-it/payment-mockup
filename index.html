@@ -802,6 +802,7 @@ function render() {
   }
 
   const itemsWrap = document.getElementById("items");
+  const focusInfo = captureFocus(itemsWrap, "item-idx", "item-field");
   itemsWrap.innerHTML = "";
 
   let sumFee = 0, sumTax = 0, sumTotal = 0;
@@ -821,12 +822,12 @@ function render() {
     card.className = "item-card";
 
     let fieldsHtml = '<div class="item-grid ' + (hasFormula ? "item-grid-3" : "item-grid-1") + '">';
-    fieldsHtml += '<div><label class="field-label">費用</label><input type="number" value="' + it.base + '" oninput="updateItem(' + idx + ',\'base\',this.value)"></div>';
+    fieldsHtml += '<div><label class="field-label">費用</label><input type="text" inputmode="decimal" data-item-idx="' + idx + '" data-item-field="base" value="' + it.base + '" oninput="updateItem(' + idx + ',\'base\',this.value)"></div>';
     if (hasFormula) {
-      fieldsHtml += '<div><label class="field-label">手續費</label><input type="number" value="' + it.fee + '" oninput="updateItem(' + idx + ',\'fee\',this.value)"></div>';
+      fieldsHtml += '<div><label class="field-label">手續費</label><input type="text" inputmode="decimal" data-item-idx="' + idx + '" data-item-field="fee" value="' + it.fee + '" oninput="updateItem(' + idx + ',\'fee\',this.value)"></div>';
       fieldsHtml +=
         '<div><label class="field-label">稅額' + (isOverridden ? '（已手動修改）' : '（系統試算）') + '</label>' +
-        '<input type="number" class="' + (isOverridden ? 'calc-input overridden' : 'calc-input') + '" value="' + tax + '" oninput="updateTax(' + idx + ',this.value)">' +
+        '<input type="text" inputmode="decimal" class="' + (isOverridden ? 'calc-input overridden' : 'calc-input') + '" data-item-idx="' + idx + '" data-item-field="tax" value="' + tax + '" oninput="updateTax(' + idx + ',this.value)">' +
         (isOverridden ? '<div class="reset-link" onclick="resetTax(' + idx + ')">恢復系統試算（' + fmt(autoTax) + '）</div>' : '') +
         '</div>';
     }
@@ -838,7 +839,7 @@ function render() {
 
     const extraRowHtml =
       '<div class="item-extra-row">' +
-        '<div><label class="field-label">摘要/用途說明</label><input type="text" placeholder="例如：8月顧問費" value="' + it.note + '" oninput="updateNote(' + idx + ',this.value)"></div>' +
+        '<div><label class="field-label">摘要/用途說明</label><input type="text" data-item-idx="' + idx + '" data-item-field="note" placeholder="例如：8月顧問費" value="' + it.note + '" oninput="updateNote(' + idx + ',this.value)"></div>' +
         '<div><label class="field-label">附件</label>' + uploadHtml + '</div>' +
       '</div>';
 
@@ -853,6 +854,34 @@ function render() {
   document.getElementById("sumFee").textContent = fmt(sumFee);
   document.getElementById("sumTax").textContent = fmt(sumTax);
   document.getElementById("totalValue").textContent = currency + " " + fmt(sumTotal);
+
+  restoreFocus(itemsWrap, "item-idx", "item-field", focusInfo);
+}
+
+function captureFocus(wrap, idxAttr, fieldAttr) {
+  const el = document.activeElement;
+  if (!el || !wrap.contains(el)) return null;
+  return {
+    idx: el.getAttribute("data-" + idxAttr),
+    field: el.getAttribute("data-" + fieldAttr),
+    selectionStart: el.selectionStart,
+    selectionEnd: el.selectionEnd
+  };
+}
+
+function restoreFocus(wrap, idxAttr, fieldAttr, info) {
+  if (!info) return;
+  const selector = '[data-' + idxAttr + '="' + info.idx + '"][data-' + fieldAttr + '="' + info.field + '"]';
+  const el = wrap.querySelector(selector);
+  if (!el) return;
+  el.focus();
+  if (typeof info.selectionStart === "number") {
+    try {
+      el.setSelectionRange(info.selectionStart, info.selectionEnd);
+    } catch (e) {
+      // input[type=number] doesn't support selection ranges in some browsers
+    }
+  }
 }
 
 function renderSettings() {
@@ -861,18 +890,20 @@ function renderSettings() {
 
 function renderConfigList(type) {
   const wrap = document.getElementById("cfgList_" + type);
+  const focusInfo = captureFocus(wrap, "cfg-idx", "cfg-field");
   wrap.innerHTML = "";
   CONFIG[type].items.forEach((o, i) => {
     const row = document.createElement("div");
     row.className = "opt-row";
     row.innerHTML =
-      '<input type="text" value="' + o.name + '" oninput="updateConfigItem(\'' + type + '\',' + i + ',\'name\',this.value)">' +
+      '<input type="text" data-cfg-idx="' + i + '" data-cfg-field="name" value="' + o.name + '" oninput="updateConfigItem(\'' + type + '\',' + i + ',\'name\',this.value)">' +
       '<div class="opt-check"><input type="checkbox" ' + (o.hasFormula ? "checked" : "") + ' onchange="toggleConfigFormula(\'' + type + '\',' + i + ',this.checked)"></div>' +
-      '<input type="number" step="0.01" value="' + o.rate + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'rate\',this.value)">' +
-      '<input type="text" value="' + o.payee + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'payee\',this.value)">' +
+      '<input type="number" step="0.01" data-cfg-idx="' + i + '" data-cfg-field="rate" value="' + o.rate + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'rate\',this.value)">' +
+      '<input type="text" data-cfg-idx="' + i + '" data-cfg-field="payee" value="' + o.payee + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'payee\',this.value)">' +
       '<button class="opt-del-btn" onclick="removeConfigItem(\'' + type + '\',' + i + ')">✕</button>';
     wrap.appendChild(row);
   });
+  restoreFocus(wrap, "cfg-idx", "cfg-field", focusInfo);
 }
 
 function updateConfigItem(type, idx, field, value) {
