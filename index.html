@@ -636,9 +636,10 @@ let items = [
 
 function setupCombobox(opts) {
   let open = false;
+  let filtering = false;
 
   function renderPanel() {
-    const filterText = opts.input.value.toLowerCase();
+    const filterText = filtering ? opts.input.value.toLowerCase() : "";
     const filtered = opts.getOptions().filter(o => o.label.toLowerCase().includes(filterText));
     opts.panel.innerHTML = filtered.length
       ? filtered.map(o => {
@@ -653,18 +654,24 @@ function setupCombobox(opts) {
 
   function openPanel() {
     open = true;
+    filtering = false;
     opts.panel.classList.add("show");
     renderPanel();
   }
 
   function closePanel() {
     open = false;
+    filtering = false;
     opts.panel.classList.remove("show");
   }
 
   opts.input.addEventListener("focus", openPanel);
+  opts.input.addEventListener("click", () => { if (!open) openPanel(); });
   opts.input.addEventListener("input", () => {
-    openPanel();
+    open = true;
+    filtering = true;
+    opts.panel.classList.add("show");
+    renderPanel();
     if (opts.onInput) opts.onInput(opts.input.value);
   });
   opts.input.addEventListener("blur", () => setTimeout(closePanel, 120));
