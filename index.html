@@ -88,7 +88,7 @@
     margin-bottom: 26px;
   }
   .type-toggle .opt {
-    padding: 10px 22px;
+    padding: 10px 18px;
     font-size: 14px;
     cursor: pointer;
     color: #8A8F98;
@@ -129,13 +129,10 @@
     border-color: #1763D8;
     box-shadow: 0 0 0 3px rgba(23,99,216,0.12);
   }
-  .readonly {
-    background: #F3F4F6;
-    color: #6B7280;
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    font-weight: 700;
+  .field-hint {
+    font-size: 11px;
+    color: #9AA1AC;
+    margin-top: 5px;
   }
   .calc-input {
     background: #F7F9FC;
@@ -176,9 +173,10 @@
   }
   .item-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
     gap: 14px;
   }
+  .item-grid-1 { grid-template-columns: 1fr; }
+  .item-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
   .item-extra-row {
     display: grid;
     grid-template-columns: 1fr 220px;
@@ -287,38 +285,27 @@
   }
 
   .settings-section {
+    max-width: 880px;
+    margin: 0 auto 20px;
     background: #fff;
     border-radius: 16px;
     padding: 24px 28px;
-    margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
   .settings-section h3 {
     font-size: 16px;
     font-weight: 700;
     color: #16213A;
-    margin: 0 0 18px;
+    margin: 0 0 4px;
   }
   .settings-subtitle {
     font-size: 12px;
     color: #9AA1AC;
-    margin: -10px 0 16px;
-  }
-  .label-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-  .label-grid .small-cap {
-    font-size: 11px;
-    color: #9AA1AC;
-    margin-bottom: 4px;
-    display: block;
+    margin: 0 0 16px;
   }
   .opt-table-head, .opt-row {
     display: grid;
-    grid-template-columns: 2.2fr 1fr 1.3fr 36px;
+    grid-template-columns: 2fr 90px 1fr 1.2fr 36px;
     gap: 10px;
     align-items: center;
   }
@@ -331,7 +318,20 @@
   .opt-row {
     margin-bottom: 8px;
   }
-  .opt-row input { height: 36px; font-size: 13px; }
+  .opt-row input[type="text"], .opt-row input[type="number"] { height: 36px; font-size: 13px; }
+  .opt-row input:disabled {
+    background: #F3F4F6;
+    color: #B0B5BD;
+  }
+  .opt-check {
+    display: flex;
+    justify-content: center;
+  }
+  .opt-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
   .opt-del-btn {
     width: 32px;
     height: 32px;
@@ -392,11 +392,11 @@
 </head>
 <body>
 
-<div class="page-title">付款明細表單改版 Mockup &nbsp;|&nbsp; 點「類型」直接切換國內／國外，欄位會自動跟著變</div>
+<div class="page-title">付款明細表單改版 Mockup &nbsp;|&nbsp; 點「類型」切換國內公司／國內個人／國外公司／國外個人，欄位會自動跟著變</div>
 
 <div class="tabs">
   <div class="tab-btn active" id="tabBtnForm" onclick="switchTab('form')">申請表單</div>
-  <div class="tab-btn" id="tabBtnSettings" onclick="switchTab('settings')">稅額與欄位設定</div>
+  <div class="tab-btn" id="tabBtnSettings" onclick="switchTab('settings')">費用項目設定</div>
 </div>
 
 <div class="tab-panel active" id="tabForm">
@@ -413,11 +413,19 @@
 
     <label class="field-label">類型</label>
     <div class="type-toggle">
-      <div class="opt" id="typeDomestic" onclick="setType('domestic')">國內費用</div>
-      <div class="opt" id="typeForeign" onclick="setType('foreign')">國外費用</div>
+      <div class="opt" id="type_companyDomestic" onclick="setType('companyDomestic')">國內公司</div>
+      <div class="opt" id="type_individualDomestic" onclick="setType('individualDomestic')">國內個人</div>
+      <div class="opt" id="type_companyForeign" onclick="setType('companyForeign')">國外公司</div>
+      <div class="opt" id="type_individualForeign" onclick="setType('individualForeign')">國外個人</div>
     </div>
 
     <div class="top-grid">
+      <div>
+        <label class="field-label">費用項目</label>
+        <input type="text" id="feeItemInput" list="feeItemList" placeholder="輸入或搜尋費用項目" oninput="onFeeItemInput(this.value)">
+        <datalist id="feeItemList"></datalist>
+        <div class="field-hint" id="feeItemHint"></div>
+      </div>
       <div>
         <label class="field-label">幣別</label>
         <select id="currency" onchange="render()">
@@ -427,15 +435,6 @@
           <option value="CNY">CNY 人民幣</option>
         </select>
       </div>
-      <div>
-        <label class="field-label">會計科目</label>
-        <select>
-          <option>請選擇</option>
-          <option>顧問服務費</option>
-          <option>廣告行銷費</option>
-          <option>系統訂閱費</option>
-        </select>
-      </div>
     </div>
 
     <div id="items"></div>
@@ -443,13 +442,13 @@
     <div class="add-btn" onclick="addItem()">＋ 新增項目</div>
 
     <div class="footer-row">
-      <span class="label" id="totalLabel">申請總額</span>
+      <span class="label">申請總額</span>
       <span class="value" id="totalValue">0</span>
     </div>
 
   </div>
 
-  <div class="note">這是互動式 Mockup，可以直接點「國內費用／國外費用」切換、修改數字、新增或刪除項目，所有金額會即時重新計算，方便跟財務一起邊討論邊測試。</div>
+  <div class="note">這是互動式 Mockup，可以直接點類型切換、修改數字、新增或刪除項目，所有金額會即時重新計算，方便跟財務一起邊討論邊測試。</div>
 
 </div>
 
@@ -464,34 +463,38 @@
     <span class="save-toast" id="saveToast">已儲存</span>
   </div>
 
-  <div class="settings-section">
-    <h3>國內費用 — 欄位名稱</h3>
-    <div class="settings-subtitle">這裡改的名稱，會直接套用到上面「申請表單」分頁裡的欄位標籤</div>
-    <div class="label-grid">
-      <div><span class="small-cap">費用欄位名稱</span><input type="text" id="lbl_domestic_base" oninput="updateLabel('domestic','base',this.value)"></div>
-      <div><span class="small-cap">手續費欄位名稱</span><input type="text" id="lbl_domestic_fee" oninput="updateLabel('domestic','fee',this.value)"></div>
-      <div><span class="small-cap">稅額欄位名稱</span><input type="text" id="lbl_domestic_tax" oninput="updateLabel('domestic','tax',this.value)"></div>
-      <div><span class="small-cap">總額欄位名稱</span><input type="text" id="lbl_domestic_total" oninput="updateLabel('domestic','total',this.value)"></div>
-    </div>
-    <h3>國內費用 — 稅額選擇清單</h3>
-    <div class="opt-table-head"><span>名稱</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
-    <div id="optList_domestic"></div>
-    <div class="opt-add-btn" onclick="addOption('domestic')">＋ 新增一項稅額選擇</div>
+  <div class="note" style="margin:0 auto 20px;">在這裡設定每個類型底下有哪些「費用項目」。沒勾「套用公式」的項目，申請表單上就只會出現「費用」欄位；勾了之後才會出現「稅率」「收款單位」可以填，申請表單上也會多出「手續費」「稅額」欄位讓人填寫。改完按「儲存設定」就會同步到上面的申請表單。</div>
+
+  <div class="settings-section" id="cfgSection_companyDomestic">
+    <h3>國內公司</h3>
+    <div class="settings-subtitle">費用項目清單</div>
+    <div class="opt-table-head"><span>費用項目名稱</span><span style="text-align:center;">套用公式</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
+    <div id="cfgList_companyDomestic"></div>
+    <div class="opt-add-btn" onclick="addConfigItem('companyDomestic')">＋ 新增費用項目</div>
   </div>
 
-  <div class="settings-section">
-    <h3>國外費用 — 欄位名稱</h3>
-    <div class="settings-subtitle">這裡改的名稱，會直接套用到上面「申請表單」分頁裡的欄位標籤</div>
-    <div class="label-grid">
-      <div><span class="small-cap">申請總額欄位名稱</span><input type="text" id="lbl_foreign_base" oninput="updateLabel('foreign','base',this.value)"></div>
-      <div><span class="small-cap">代扣稅額欄位名稱</span><input type="text" id="lbl_foreign_tax" oninput="updateLabel('foreign','tax',this.value)"></div>
-      <div><span class="small-cap">廠商實收欄位名稱</span><input type="text" id="lbl_foreign_net" oninput="updateLabel('foreign','net',this.value)"></div>
-      <div><span class="small-cap">總額欄位名稱</span><input type="text" id="lbl_foreign_total" oninput="updateLabel('foreign','total',this.value)"></div>
-    </div>
-    <h3>國外費用 — 稅額選擇清單</h3>
-    <div class="opt-table-head"><span>名稱</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
-    <div id="optList_foreign"></div>
-    <div class="opt-add-btn" onclick="addOption('foreign')">＋ 新增一項稅額選擇</div>
+  <div class="settings-section" id="cfgSection_individualDomestic">
+    <h3>國內個人</h3>
+    <div class="settings-subtitle">費用項目清單</div>
+    <div class="opt-table-head"><span>費用項目名稱</span><span style="text-align:center;">套用公式</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
+    <div id="cfgList_individualDomestic"></div>
+    <div class="opt-add-btn" onclick="addConfigItem('individualDomestic')">＋ 新增費用項目</div>
+  </div>
+
+  <div class="settings-section" id="cfgSection_companyForeign">
+    <h3>國外公司</h3>
+    <div class="settings-subtitle">費用項目清單</div>
+    <div class="opt-table-head"><span>費用項目名稱</span><span style="text-align:center;">套用公式</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
+    <div id="cfgList_companyForeign"></div>
+    <div class="opt-add-btn" onclick="addConfigItem('companyForeign')">＋ 新增費用項目</div>
+  </div>
+
+  <div class="settings-section" id="cfgSection_individualForeign">
+    <h3>國外個人</h3>
+    <div class="settings-subtitle">費用項目清單</div>
+    <div class="opt-table-head"><span>費用項目名稱</span><span style="text-align:center;">套用公式</span><span>稅率（%）</span><span>收款單位</span><span></span></div>
+    <div id="cfgList_individualForeign"></div>
+    <div class="opt-add-btn" onclick="addConfigItem('individualForeign')">＋ 新增費用項目</div>
   </div>
 
   <div class="note">改完直接按「儲存設定」，這個檔案打開的瀏覽器就會記住這份設定。如果要跟另一份 HTML 檔同步（例如財務改完要回傳給您），用「匯出設定檔」存一個小檔案傳給對方，對方在他的 HTML 檔案裡按「匯入設定檔」讀取，兩邊就會變成一樣的設定。</div>
@@ -499,34 +502,50 @@
 </div>
 
 <script>
-const STORAGE_KEY = "paymentMockupConfig_v1";
+const STORAGE_KEY = "paymentMockupConfig_v2";
+const TYPE_KEYS = ["companyDomestic", "individualDomestic", "companyForeign", "individualForeign"];
+const TYPE_LABELS = {
+  companyDomestic: "國內公司",
+  individualDomestic: "國內個人",
+  companyForeign: "國外公司",
+  individualForeign: "國外個人"
+};
 
 const DEFAULT_CONFIG = {
-  domestic: {
-    labels: { base: "費用", fee: "手續費", tax: "稅額", total: "申請總額（費用＋手續費＋稅額）" },
-    options: [
-      { name: "營業稅", rate: 5, payee: "國稅局" },
-      { name: "二代健保", rate: 2.11, payee: "健保署" },
-      { name: "免稅", rate: 0, payee: "無" }
+  companyDomestic: {
+    items: [
+      { name: "SBBG", hasFormula: false, rate: 5, payee: "國稅局" }
     ]
   },
-  foreign: {
-    labels: { base: "申請總額", tax: "代扣稅額", net: "廠商實收", total: "申請總額（已含代扣稅額）" },
-    options: [
-      { name: "非本國個人 租金/勞務/執行業務報酬", rate: 20, payee: "國稅局" },
-      { name: "境外電商/外國公司(未核定稅率)", rate: 20, payee: "國稅局" },
-      { name: "Meta(FB/IG) 核定稅率", rate: 3, payee: "國稅局" },
-      { name: "HubSpot 核定稅率", rate: 15, payee: "國稅局" }
+  individualDomestic: {
+    items: [
+      { name: "顧問費（二代健保）", hasFormula: true, rate: 2.11, payee: "健保署" }
+    ]
+  },
+  companyForeign: {
+    items: [
+      { name: "Fireflies", hasFormula: false, rate: 0, payee: "" },
+      { name: "Claude", hasFormula: true, rate: 20, payee: "國稅局" }
+    ]
+  },
+  individualForeign: {
+    items: [
+      { name: "非本國個人 租金/勞務/執行業務報酬", hasFormula: true, rate: 20, payee: "國稅局" }
     ]
   }
 };
+
+function isValidConfig(parsed) {
+  if (!parsed) return false;
+  return TYPE_KEYS.every(t => parsed[t] && Array.isArray(parsed[t].items));
+}
 
 function loadConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.domestic && parsed.foreign) return parsed;
+      if (isValidConfig(parsed)) return parsed;
     }
   } catch (e) {}
   return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
@@ -534,10 +553,11 @@ function loadConfig() {
 
 let CONFIG = loadConfig();
 
-let currentType = "domestic";
+let currentType = "companyDomestic";
+let feeItemText = "";
 let items = [
-  { taxIndex: 0, base: 10000, fee: 0, note: "", fileName: "", taxOverride: null, netOverride: null },
-  { taxIndex: 1, base: 3000, fee: 0, note: "", fileName: "", taxOverride: null, netOverride: null }
+  { base: 10000, fee: 0, note: "", fileName: "", taxOverride: null },
+  { base: 3000, fee: 0, note: "", fileName: "", taxOverride: null }
 ];
 
 function switchTab(tab) {
@@ -551,20 +571,24 @@ function switchTab(tab) {
 function setType(type) {
   if (type === currentType) return;
   currentType = type;
-  items = items.map((it, idx) => ({
-    taxIndex: 0,
-    base: idx === 0 ? (type === "domestic" ? 10000 : 100000) : (type === "domestic" ? 3000 : 30000),
-    fee: 0,
-    note: "",
-    fileName: "",
-    taxOverride: null,
-    netOverride: null
-  }));
+  feeItemText = "";
+  items = [{ base: 0, fee: 0, note: "", fileName: "", taxOverride: null }];
+  render();
+}
+
+function getCurrentFeeItem() {
+  const list = CONFIG[currentType].items;
+  return list.find(o => o.name === feeItemText) || null;
+}
+
+function onFeeItemInput(value) {
+  feeItemText = value;
+  items.forEach(it => { it.taxOverride = null; });
   render();
 }
 
 function addItem() {
-  items.push({ taxIndex: 0, base: 0, fee: 0, note: "", fileName: "", taxOverride: null, netOverride: null });
+  items.push({ base: 0, fee: 0, note: "", fileName: "", taxOverride: null });
   render();
 }
 
@@ -575,35 +599,18 @@ function removeItem(idx) {
 }
 
 function updateItem(idx, field, value) {
-  if (field === "taxIndex") {
-    items[idx].taxIndex = parseInt(value, 10);
-  } else {
-    items[idx][field] = parseFloat(value) || 0;
-  }
+  items[idx][field] = parseFloat(value) || 0;
   items[idx].taxOverride = null;
-  items[idx].netOverride = null;
   render();
 }
 
 function updateTax(idx, value) {
   items[idx].taxOverride = value === "" ? null : (parseFloat(value) || 0);
-  items[idx].netOverride = null;
   render();
 }
 
 function resetTax(idx) {
   items[idx].taxOverride = null;
-  items[idx].netOverride = null;
-  render();
-}
-
-function updateNet(idx, value) {
-  items[idx].netOverride = value === "" ? null : (parseFloat(value) || 0);
-  render();
-}
-
-function resetNet(idx) {
-  items[idx].netOverride = null;
   render();
 }
 
@@ -628,34 +635,41 @@ function fmt(n) {
   return Math.round(n).toLocaleString();
 }
 
-function optionLabel(o) {
-  const r = (Math.round(o.rate * 100) / 100);
-  return o.name + " " + r + "%・" + o.payee;
-}
-
 function render() {
-  document.getElementById("typeDomestic").classList.toggle("active", currentType === "domestic");
-  document.getElementById("typeForeign").classList.toggle("active", currentType === "foreign");
+  TYPE_KEYS.forEach(t => {
+    document.getElementById("type_" + t).classList.toggle("active", currentType === t);
+  });
 
-  const isDomestic = currentType === "domestic";
-  const cfg = CONFIG[currentType];
-  const options = cfg.options;
-  const labels = cfg.labels;
+  const feeItem = getCurrentFeeItem();
+  const hasFormula = !!(feeItem && feeItem.hasFormula);
+  const rate = hasFormula ? feeItem.rate / 100 : 0;
+
+  const feeItemInput = document.getElementById("feeItemInput");
+  if (document.activeElement !== feeItemInput) feeItemInput.value = feeItemText;
+
+  const datalist = document.getElementById("feeItemList");
+  datalist.innerHTML = CONFIG[currentType].items.map(o => '<option value="' + o.name + '"></option>').join("");
+
+  const hint = document.getElementById("feeItemHint");
+  if (feeItemText && !feeItem) {
+    hint.textContent = "找不到這個費用項目，會以「不套用公式」處理（可到「費用項目設定」新增）";
+  } else if (feeItem && feeItem.hasFormula) {
+    hint.textContent = "套用公式：稅率 " + feeItem.rate + "%・收款單位 " + (feeItem.payee || "未設定");
+  } else {
+    hint.textContent = "";
+  }
+
   const itemsWrap = document.getElementById("items");
   itemsWrap.innerHTML = "";
 
   let sumFee = 0, sumTax = 0, sumTotal = 0;
 
   items.forEach((it, idx) => {
-    if (it.taxIndex >= options.length) it.taxIndex = 0;
-    const rate = options[it.taxIndex].rate / 100;
-    const autoTax = Math.round(it.base * rate * 100) / 100;
-    const tax = (it.taxOverride !== null && it.taxOverride !== undefined) ? it.taxOverride : autoTax;
-    const isOverridden = it.taxOverride !== null && it.taxOverride !== undefined;
-    const total = isDomestic ? (it.base + it.fee + tax) : it.base;
-    const autoNet = isDomestic ? null : (it.base - tax);
-    const net = isDomestic ? null : ((it.netOverride !== null && it.netOverride !== undefined) ? it.netOverride : autoNet);
-    const isNetOverridden = !isDomestic && it.netOverride !== null && it.netOverride !== undefined;
+    const autoTax = hasFormula ? Math.round(it.base * rate * 100) / 100 : 0;
+    const tax = hasFormula ? ((it.taxOverride !== null && it.taxOverride !== undefined) ? it.taxOverride : autoTax) : 0;
+    const isOverridden = hasFormula && it.taxOverride !== null && it.taxOverride !== undefined;
+    const fee = hasFormula ? it.fee : 0;
+    const total = it.base + fee + tax;
 
     sumFee += it.base;
     sumTax += tax;
@@ -664,30 +678,14 @@ function render() {
     const card = document.createElement("div");
     card.className = "item-card";
 
-    const optionsHtml = options.map((o, i) =>
-      '<option value="' + i + '"' + (i === it.taxIndex ? ' selected' : '') + '>' + optionLabel(o) + '</option>'
-    ).join("");
-
-    const taxFieldHtml =
-      '<div><label class="field-label">' + labels.tax + (isOverridden ? '（已手動修改）' : '（系統試算）') + '</label>' +
-      '<input type="number" class="' + (isOverridden ? 'calc-input overridden' : 'calc-input') + '" value="' + tax + '" oninput="updateTax(' + idx + ',this.value)">' +
-      (isOverridden ? '<div class="reset-link" onclick="resetTax(' + idx + ')">恢復系統試算（' + fmt(autoTax) + '）</div>' : '') +
-      '</div>';
-
-    let fieldsHtml = '<div class="item-grid">';
-    fieldsHtml += '<div><label class="field-label">稅額選擇</label><select onchange="updateItem(' + idx + ',\'taxIndex\',this.value)">' + optionsHtml + '</select></div>';
-
-    if (isDomestic) {
-      fieldsHtml += '<div><label class="field-label">' + labels.base + '</label><input type="number" value="' + it.base + '" oninput="updateItem(' + idx + ',\'base\',this.value)"></div>';
-      fieldsHtml += '<div><label class="field-label">' + labels.fee + '</label><input type="number" value="' + it.fee + '" oninput="updateItem(' + idx + ',\'fee\',this.value)"></div>';
-      fieldsHtml += taxFieldHtml;
-    } else {
-      fieldsHtml += '<div><label class="field-label">' + labels.base + '</label><input type="number" value="' + it.base + '" oninput="updateItem(' + idx + ',\'base\',this.value)"></div>';
-      fieldsHtml += taxFieldHtml;
+    let fieldsHtml = '<div class="item-grid ' + (hasFormula ? "item-grid-3" : "item-grid-1") + '">';
+    fieldsHtml += '<div><label class="field-label">費用</label><input type="number" value="' + it.base + '" oninput="updateItem(' + idx + ',\'base\',this.value)"></div>';
+    if (hasFormula) {
+      fieldsHtml += '<div><label class="field-label">手續費</label><input type="number" value="' + it.fee + '" oninput="updateItem(' + idx + ',\'fee\',this.value)"></div>';
       fieldsHtml +=
-        '<div><label class="field-label">' + labels.net + (isNetOverridden ? '（已手動修改）' : '（依稅額計算）') + '</label>' +
-        '<input type="number" class="' + (isNetOverridden ? 'calc-input overridden' : 'calc-input') + '" value="' + net + '" oninput="updateNet(' + idx + ',this.value)">' +
-        (isNetOverridden ? '<div class="reset-link" onclick="resetNet(' + idx + ')">恢復試算（' + fmt(autoNet) + '）</div>' : '') +
+        '<div><label class="field-label">稅額' + (isOverridden ? '（已手動修改）' : '（系統試算）') + '</label>' +
+        '<input type="number" class="' + (isOverridden ? 'calc-input overridden' : 'calc-input') + '" value="' + tax + '" oninput="updateTax(' + idx + ',this.value)">' +
+        (isOverridden ? '<div class="reset-link" onclick="resetTax(' + idx + ')">恢復系統試算（' + fmt(autoTax) + '）</div>' : '') +
         '</div>';
     }
     fieldsHtml += '</div>';
@@ -712,57 +710,51 @@ function render() {
 
   document.getElementById("sumFee").textContent = fmt(sumFee);
   document.getElementById("sumTax").textContent = fmt(sumTax);
-  document.getElementById("totalLabel").textContent = labels.total;
   document.getElementById("totalValue").textContent = document.getElementById("currency").value + " " + fmt(sumTotal);
 }
 
 function renderSettings() {
-  ["domestic", "foreign"].forEach(type => {
-    const labels = CONFIG[type].labels;
-    Object.keys(labels).forEach(key => {
-      const el = document.getElementById("lbl_" + type + "_" + key);
-      if (el) el.value = labels[key];
-    });
-    renderOptionList(type);
-  });
+  TYPE_KEYS.forEach(type => renderConfigList(type));
 }
 
-function renderOptionList(type) {
-  const wrap = document.getElementById("optList_" + type);
+function renderConfigList(type) {
+  const wrap = document.getElementById("cfgList_" + type);
   wrap.innerHTML = "";
-  CONFIG[type].options.forEach((o, i) => {
+  CONFIG[type].items.forEach((o, i) => {
     const row = document.createElement("div");
     row.className = "opt-row";
     row.innerHTML =
-      '<input type="text" value="' + o.name + '" oninput="updateOption(\'' + type + '\',' + i + ',\'name\',this.value)">' +
-      '<input type="number" value="' + o.rate + '" step="0.01" oninput="updateOption(\'' + type + '\',' + i + ',\'rate\',this.value)">' +
-      '<input type="text" value="' + o.payee + '" oninput="updateOption(\'' + type + '\',' + i + ',\'payee\',this.value)">' +
-      '<button class="opt-del-btn" onclick="removeOption(\'' + type + '\',' + i + ')">✕</button>';
+      '<input type="text" value="' + o.name + '" oninput="updateConfigItem(\'' + type + '\',' + i + ',\'name\',this.value)">' +
+      '<div class="opt-check"><input type="checkbox" ' + (o.hasFormula ? "checked" : "") + ' onchange="toggleConfigFormula(\'' + type + '\',' + i + ',this.checked)"></div>' +
+      '<input type="number" step="0.01" value="' + o.rate + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'rate\',this.value)">' +
+      '<input type="text" value="' + o.payee + '" ' + (o.hasFormula ? "" : "disabled") + ' oninput="updateConfigItem(\'' + type + '\',' + i + ',\'payee\',this.value)">' +
+      '<button class="opt-del-btn" onclick="removeConfigItem(\'' + type + '\',' + i + ')">✕</button>';
     wrap.appendChild(row);
   });
 }
 
-function updateLabel(type, field, value) {
-  CONFIG[type].labels[field] = value;
-}
-
-function updateOption(type, idx, field, value) {
+function updateConfigItem(type, idx, field, value) {
   if (field === "rate") {
-    CONFIG[type].options[idx][field] = parseFloat(value) || 0;
+    CONFIG[type].items[idx][field] = parseFloat(value) || 0;
   } else {
-    CONFIG[type].options[idx][field] = value;
+    CONFIG[type].items[idx][field] = value;
   }
 }
 
-function addOption(type) {
-  CONFIG[type].options.push({ name: "新稅額選項", rate: 0, payee: "請填寫" });
-  renderOptionList(type);
+function toggleConfigFormula(type, idx, checked) {
+  CONFIG[type].items[idx].hasFormula = checked;
+  renderConfigList(type);
 }
 
-function removeOption(type, idx) {
-  if (CONFIG[type].options.length <= 1) return;
-  CONFIG[type].options.splice(idx, 1);
-  renderOptionList(type);
+function addConfigItem(type) {
+  CONFIG[type].items.push({ name: "新費用項目", hasFormula: false, rate: 0, payee: "" });
+  renderConfigList(type);
+}
+
+function removeConfigItem(type, idx) {
+  if (CONFIG[type].items.length <= 1) return;
+  CONFIG[type].items.splice(idx, 1);
+  renderConfigList(type);
 }
 
 function saveConfig() {
@@ -800,7 +792,7 @@ function importConfig(input) {
   reader.onload = function (e) {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (!parsed.domestic || !parsed.foreign) throw new Error("格式不對");
+      if (!isValidConfig(parsed)) throw new Error("格式不對");
       CONFIG = parsed;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(CONFIG));
       renderSettings();
