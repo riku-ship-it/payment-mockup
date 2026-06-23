@@ -134,6 +134,69 @@
     color: #9AA1AC;
     margin-top: 5px;
   }
+  .combo {
+    position: relative;
+  }
+  .combo-input {
+    padding-right: 30px !important;
+    cursor: text;
+  }
+  .combo-arrow {
+    position: absolute;
+    right: 12px;
+    top: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: #8A8F98;
+    pointer-events: none;
+  }
+  .combo-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #D7DAE0;
+    border-radius: 9px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    z-index: 20;
+    padding: 4px;
+  }
+  .combo-panel.show {
+    display: block;
+  }
+  .combo-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: #16213A;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .combo-option:hover {
+    background: #F5F6F8;
+  }
+  .combo-option.selected {
+    font-weight: 700;
+    color: #1763D8;
+  }
+  .combo-check {
+    width: 14px;
+    font-size: 12px;
+    color: #1763D8;
+  }
+  .combo-empty {
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #9AA1AC;
+  }
   .calc-input {
     background: #F7F9FC;
     border-color: #D7DAE0;
@@ -422,18 +485,20 @@
     <div class="top-grid">
       <div>
         <label class="field-label">費用項目</label>
-        <input type="text" id="feeItemInput" list="feeItemList" placeholder="輸入或搜尋費用項目" oninput="onFeeItemInput(this.value)">
-        <datalist id="feeItemList"></datalist>
+        <div class="combo" id="feeItemCombo">
+          <input type="text" id="feeItemInput" class="combo-input" placeholder="輸入或搜尋費用項目" autocomplete="off">
+          <div class="combo-arrow">▾</div>
+          <div class="combo-panel" id="feeItemPanel"></div>
+        </div>
         <div class="field-hint" id="feeItemHint"></div>
       </div>
       <div>
         <label class="field-label">幣別</label>
-        <select id="currency" onchange="render()">
-          <option value="TWD">TWD 新台幣</option>
-          <option value="USD">USD 美金</option>
-          <option value="JPY">JPY 日幣</option>
-          <option value="CNY">CNY 人民幣</option>
-        </select>
+        <div class="combo" id="currencyCombo">
+          <input type="text" id="currencyInput" class="combo-input" placeholder="輸入或搜尋幣別" autocomplete="off">
+          <div class="combo-arrow">▾</div>
+          <div class="combo-panel" id="currencyPanel"></div>
+        </div>
       </div>
     </div>
 
@@ -456,10 +521,6 @@
 
   <div class="settings-actions">
     <button class="action-btn primary" onclick="saveConfig()">儲存設定</button>
-    <button class="action-btn" onclick="resetConfig()">重設為預設值</button>
-    <button class="action-btn" onclick="exportConfig()">匯出設定檔</button>
-    <button class="action-btn" onclick="document.getElementById('importFileInput').click()">匯入設定檔</button>
-    <input type="file" id="importFileInput" accept="application/json" onchange="importConfig(this)">
     <span class="save-toast" id="saveToast">已儲存</span>
   </div>
 
@@ -497,12 +558,14 @@
     <div class="opt-add-btn" onclick="addConfigItem('individualForeign')">＋ 新增費用項目</div>
   </div>
 
-  <div class="note">改完直接按「儲存設定」，這個檔案打開的瀏覽器就會記住這份設定。如果要跟另一份 HTML 檔同步（例如財務改完要回傳給您），用「匯出設定檔」存一個小檔案傳給對方，對方在他的 HTML 檔案裡按「匯入設定檔」讀取，兩邊就會變成一樣的設定。</div>
+  <div class="note">改完直接按「儲存設定」，設定會同步寫回共用的資料來源，所有人打開這個網址都會看到同一份最新設定。</div>
 
 </div>
 
 <script>
-const STORAGE_KEY = "paymentMockupConfig_v2";
+// Web App URL from the GAS deployment described in gas/Code.gs.
+const GAS_URL = "PUT_YOUR_GAS_WEB_APP_URL_HERE";
+
 const TYPE_KEYS = ["companyDomestic", "individualDomestic", "companyForeign", "individualForeign"];
 const TYPE_LABELS = {
   companyDomestic: "國內公司",
@@ -540,25 +603,113 @@ function isValidConfig(parsed) {
   return TYPE_KEYS.every(t => parsed[t] && Array.isArray(parsed[t].items));
 }
 
-function loadConfig() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (isValidConfig(parsed)) return parsed;
-    }
-  } catch (e) {}
-  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+function isGasConfigured() {
+  return GAS_URL && GAS_URL.indexOf("PUT_YOUR_GAS_WEB_APP_URL_HERE") === -1;
 }
 
-let CONFIG = loadConfig();
+function fetchConfig() {
+  if (!isGasConfigured()) return Promise.resolve();
+  return fetch(GAS_URL)
+    .then(res => res.json())
+    .then(data => {
+      if (isValidConfig(data)) CONFIG = data;
+    })
+    .catch(err => {
+      console.error("讀取共用設定失敗，改用預設值", err);
+    });
+}
+
+let CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 
 let currentType = "companyDomestic";
 let feeItemText = "";
+let currency = "TWD";
+const CURRENCY_OPTIONS = [
+  { value: "TWD", label: "TWD 新台幣" },
+  { value: "USD", label: "USD 美金" },
+  { value: "JPY", label: "JPY 日幣" },
+  { value: "CNY", label: "CNY 人民幣" }
+];
 let items = [
   { base: 10000, fee: 0, note: "", fileName: "", taxOverride: null },
   { base: 3000, fee: 0, note: "", fileName: "", taxOverride: null }
 ];
+
+function setupCombobox(opts) {
+  let open = false;
+
+  function renderPanel() {
+    const filterText = opts.input.value.toLowerCase();
+    const filtered = opts.getOptions().filter(o => o.label.toLowerCase().includes(filterText));
+    opts.panel.innerHTML = filtered.length
+      ? filtered.map(o => {
+          const selected = o.value === opts.getCurrentValue();
+          return '<div class="combo-option' + (selected ? " selected" : "") + '" data-value="' +
+            String(o.value).replace(/"/g, "&quot;") + '">' +
+            '<span class="combo-check">' + (selected ? "✓" : "") + '</span>' +
+            '<span>' + o.label + '</span></div>';
+        }).join("")
+      : '<div class="combo-empty">沒有符合的選項</div>';
+  }
+
+  function openPanel() {
+    open = true;
+    opts.panel.classList.add("show");
+    renderPanel();
+  }
+
+  function closePanel() {
+    open = false;
+    opts.panel.classList.remove("show");
+  }
+
+  opts.input.addEventListener("focus", openPanel);
+  opts.input.addEventListener("input", () => {
+    openPanel();
+    if (opts.onInput) opts.onInput(opts.input.value);
+  });
+  opts.input.addEventListener("blur", () => setTimeout(closePanel, 120));
+  opts.panel.addEventListener("mousedown", e => {
+    const optEl = e.target.closest(".combo-option");
+    if (!optEl) return;
+    e.preventDefault();
+    opts.onSelect(optEl.getAttribute("data-value"));
+    closePanel();
+  });
+
+  return { refresh: () => { if (open) renderPanel(); } };
+}
+
+const feeItemCombo = setupCombobox({
+  input: document.getElementById("feeItemInput"),
+  panel: document.getElementById("feeItemPanel"),
+  getOptions: () => CONFIG[currentType].items.map(o => ({ value: o.name, label: o.name })),
+  getCurrentValue: () => feeItemText,
+  onSelect: value => {
+    feeItemText = value;
+    document.getElementById("feeItemInput").value = value;
+    items.forEach(it => { it.taxOverride = null; });
+    render();
+  },
+  onInput: value => {
+    feeItemText = value;
+    items.forEach(it => { it.taxOverride = null; });
+    render();
+  }
+});
+
+const currencyCombo = setupCombobox({
+  input: document.getElementById("currencyInput"),
+  panel: document.getElementById("currencyPanel"),
+  getOptions: () => CURRENCY_OPTIONS,
+  getCurrentValue: () => currency,
+  onSelect: value => {
+    currency = value;
+    document.getElementById("currencyInput").value = CURRENCY_OPTIONS.find(o => o.value === value).label;
+    render();
+  }
+});
+document.getElementById("currencyInput").value = CURRENCY_OPTIONS.find(o => o.value === currency).label;
 
 function switchTab(tab) {
   document.getElementById("tabForm").classList.toggle("active", tab === "form");
@@ -579,12 +730,6 @@ function setType(type) {
 function getCurrentFeeItem() {
   const list = CONFIG[currentType].items;
   return list.find(o => o.name === feeItemText) || null;
-}
-
-function onFeeItemInput(value) {
-  feeItemText = value;
-  items.forEach(it => { it.taxOverride = null; });
-  render();
 }
 
 function addItem() {
@@ -646,9 +791,7 @@ function render() {
 
   const feeItemInput = document.getElementById("feeItemInput");
   if (document.activeElement !== feeItemInput) feeItemInput.value = feeItemText;
-
-  const datalist = document.getElementById("feeItemList");
-  datalist.innerHTML = CONFIG[currentType].items.map(o => '<option value="' + o.name + '"></option>').join("");
+  feeItemCombo.refresh();
 
   const hint = document.getElementById("feeItemHint");
   if (feeItemText && !feeItem) {
@@ -710,7 +853,7 @@ function render() {
 
   document.getElementById("sumFee").textContent = fmt(sumFee);
   document.getElementById("sumTax").textContent = fmt(sumTax);
-  document.getElementById("totalValue").textContent = document.getElementById("currency").value + " " + fmt(sumTotal);
+  document.getElementById("totalValue").textContent = currency + " " + fmt(sumTotal);
 }
 
 function renderSettings() {
@@ -758,55 +901,31 @@ function removeConfigItem(type, idx) {
 }
 
 function saveConfig() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(CONFIG));
-  render();
   const toast = document.getElementById("saveToast");
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 1800);
-}
-
-function resetConfig() {
-  if (!confirm("確定要把所有設定還原成預設值嗎？這個動作無法復原。")) return;
-  CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(CONFIG));
-  renderSettings();
-  render();
-}
-
-function exportConfig() {
-  const blob = new Blob([JSON.stringify(CONFIG, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "payment_mockup_settings.json";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function importConfig(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      if (!isValidConfig(parsed)) throw new Error("格式不對");
-      CONFIG = parsed;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(CONFIG));
-      renderSettings();
+  if (!isGasConfigured()) {
+    alert("尚未設定 GAS_URL，請先依 gas/Code.gs 的說明部署後端並填入網址");
+    return;
+  }
+  fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(CONFIG)
+  })
+    .then(res => res.json())
+    .then(() => {
       render();
-      alert("匯入成功，設定已套用");
-    } catch (err) {
-      alert("這個檔案讀不起來，請確認是用「匯出設定檔」產生的 json 檔");
-    }
-  };
-  reader.readAsText(file);
-  input.value = "";
+      toast.textContent = "已儲存（已同步給所有人）";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    })
+    .catch(err => {
+      alert("儲存失敗，請檢查網路連線或 GAS 部署設定：" + err);
+    });
 }
 
-render();
+fetchConfig().then(() => {
+  render();
+});
 </script>
 
 </body>
