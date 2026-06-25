@@ -121,6 +121,8 @@ function rmFillStatusSelect(current) {
 function rmToggleEdit() {
   const d = rmGetNode(rmCurrent);
   if (!d) return;
+  document.getElementById('rm-e-ver').value = (d.ver || '').replace(/\n/g, '\\n');
+  document.getElementById('rm-e-lbl').value = (d.lbl || '').replace(/\n/g, '\\n');
   document.getElementById('rm-e-title').value = d.t;
   document.getElementById('rm-e-body').value = d.b;
   rmFillStatusSelect(d.status);
@@ -136,6 +138,8 @@ function rmCancelEdit() {
 function rmSaveEdit() {
   const d = rmGetNode(rmCurrent);
   if (!d) return;
+  d.ver = document.getElementById('rm-e-ver').value.replace(/\\n/g, '\n');
+  d.lbl = document.getElementById('rm-e-lbl').value.replace(/\\n/g, '\n');
   d.t = document.getElementById('rm-e-title').value;
   d.b = document.getElementById('rm-e-body').value;
   d.status = document.getElementById('rm-e-status').value;
