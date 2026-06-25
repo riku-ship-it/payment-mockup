@@ -19,7 +19,7 @@ var TYPE_KEYS = ['companyDomestic', 'individualDomestic', 'companyForeign', 'ind
 var HEADER = ['Type', 'Name', 'HasFormula', 'Rate', 'Payee'];
 
 var ROLES_SHEET_NAME = 'RolesData';
-var ROLES_HEADER = ['RoleOrder', 'RoleName', 'TaskOrder', 'TaskName'];
+var ROLES_HEADER = ['RoleOrder', 'RoleName', 'TaskOrder', 'TaskName', 'TaskDetails'];
 
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -98,7 +98,7 @@ function doPost(e) {
   return jsonOutput_({ ok: true });
 }
 
-// roles = [ { name: '角色名稱', tasks: ['工作項目', ...] }, ... ]
+// roles = [ { name: '角色名稱', tasks: [ { name: '工作項目', details: ['細節', ...] }, ... ] }, ... ]
 function getRoles_() {
   var sheet = getRolesSheet_();
   var rows = sheet.getDataRange().getValues();
@@ -109,13 +109,22 @@ function getRoles_() {
     var roleOrder = rows[i][0];
     var roleName = rows[i][1];
     var taskName = rows[i][3];
+    var taskDetailsRaw = rows[i][4];
     if (roleOrder === '' || roleOrder === null || roleOrder === undefined) continue;
     if (!roleByOrder[roleOrder]) {
       roleByOrder[roleOrder] = { name: String(roleName || ''), tasks: [] };
       roleOrders.push(roleOrder);
     }
     if (taskName !== '' && taskName !== null && taskName !== undefined) {
-      roleByOrder[roleOrder].tasks.push(String(taskName));
+      var details = [];
+      if (taskDetailsRaw) {
+        try {
+          details = JSON.parse(taskDetailsRaw);
+        } catch (err) {
+          details = [];
+        }
+      }
+      roleByOrder[roleOrder].tasks.push({ name: String(taskName), details: details });
     }
   }
 
@@ -134,10 +143,12 @@ function saveRoles_(data) {
   roles.forEach(function (role, roleIdx) {
     var tasks = role.tasks || [];
     if (tasks.length === 0) {
-      rowsToWrite.push([roleIdx, role.name, '', '']);
+      rowsToWrite.push([roleIdx, role.name, '', '', '']);
     } else {
       tasks.forEach(function (task, taskIdx) {
-        rowsToWrite.push([roleIdx, role.name, taskIdx, task]);
+        var taskName = (task && typeof task === 'object') ? task.name : task;
+        var details = (task && typeof task === 'object') ? (task.details || []) : [];
+        rowsToWrite.push([roleIdx, role.name, taskIdx, taskName, JSON.stringify(details)]);
       });
     }
   });

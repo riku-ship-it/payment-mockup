@@ -136,6 +136,9 @@
   margin-bottom: 10px;
   min-height: 6px;
 }
+.task-wrap.dragging {
+  opacity: 0.4;
+}
 .task-row {
   display: flex;
   align-items: center;
@@ -144,9 +147,79 @@
   border-radius: 9px;
   padding: 2px 4px 2px 8px;
 }
-.task-row.dragging {
-  opacity: 0.4;
+.task-expand-btn {
+  width: 16px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: #8FAEDD;
+  cursor: pointer;
+  font-size: 10px;
+  flex-shrink: 0;
+  padding: 0;
 }
+.task-expand-btn.is-empty {
+  opacity: 0.45;
+}
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0 22px;
+}
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F4F7FC;
+  border-radius: 7px;
+  padding: 1px 4px 1px 8px;
+}
+.detail-bullet {
+  color: #B0BCD0;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.detail-name-input {
+  flex: 1;
+  height: 26px;
+  border: none;
+  background: transparent;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4B5563;
+  font-family: inherit;
+}
+.detail-name-input:focus {
+  outline: none;
+}
+.detail-del-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #B7C2D6;
+  cursor: pointer;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.detail-del-btn:hover { color: #C0392B; }
+.detail-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed #C7CBD3;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: #8B93A0;
+  background: transparent;
+  cursor: pointer;
+  width: fit-content;
+}
+.detail-add-btn:hover { border-color: #1763D8; color: #1763D8; }
 .task-drag-handle {
   cursor: grab;
   color: #8FAEDD;
