@@ -110,11 +110,13 @@ function renderRoles() {
   const board = document.getElementById("rolesBoard");
   board.innerHTML = "";
 
-  ROLES.forEach(role => {
+  const ROLE_COLOR_COUNT = 7;
+  ROLES.forEach((role, index) => {
     const card = document.createElement("div");
     card.className = "role-card";
     card.draggable = true;
     card.dataset.roleId = role.id;
+    card.dataset.color = index % ROLE_COLOR_COUNT;
 
     const header = document.createElement("div");
     header.className = "role-card-header";
