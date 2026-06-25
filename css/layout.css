@@ -54,9 +54,12 @@ body {
   font-size: 14px;
   font-weight: 700;
   color: #C7CBD3;
-  cursor: pointer;
+  cursor: grab;
   white-space: nowrap;
   text-align: left;
+}
+.sidebar-nav-item.dragging {
+  opacity: 0.4;
 }
 .sidebar-nav-item:hover {
   background: rgba(255,255,255,0.08);

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/payment.css">
 <link rel="stylesheet" href="css/roadmap.css">
+<link rel="stylesheet" href="css/roles.css">
 </head>
 <body>
 
@@ -21,6 +22,9 @@
       </button>
       <button class="sidebar-nav-item" data-page="roadmap" onclick="switchPage('roadmap')">
         <span class="nav-icon">🗺️</span><span class="nav-label">開發路線圖</span>
+      </button>
+      <button class="sidebar-nav-item" data-page="roles" onclick="switchPage('roles')">
+        <span class="nav-icon">👥</span><span class="nav-label">角色與職務</span>
       </button>
     </nav>
   </aside>
@@ -221,6 +225,26 @@
       </div>
     </section>
 
+    <section class="app-page" id="page-roles">
+      <div class="roles-wrap">
+
+        <div class="roles-header">
+          <div>
+            <div class="roles-title">角色與職務</div>
+            <div class="roles-sub">自由定義角色（部門），以及每個角色底下要做的事項・拖曳卡片或項目可調整順序</div>
+          </div>
+          <div class="roles-actions">
+            <button class="action-btn" onclick="addRole()">＋ 新增角色</button>
+            <button class="action-btn primary" onclick="saveRoles()">儲存設定</button>
+            <span class="save-toast" id="rolesSaveToast">已儲存</span>
+          </div>
+        </div>
+
+        <div class="roles-board" id="rolesBoard"></div>
+
+      </div>
+    </section>
+
   </main>
 
 </div>
@@ -228,5 +252,6 @@
 <script src="js/layout.js"></script>
 <script src="js/payment.js"></script>
 <script src="js/roadmap.js"></script>
+<script src="js/roles.js"></script>
 </body>
 </html>
