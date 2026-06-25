@@ -78,41 +78,6 @@
   font-family: inherit;
 }
 
-/* 角色顏色配色：依卡片順序循環套用，方便區分不同角色 */
-.role-card[data-color="0"] .role-name-input { background: #1763D8; }
-.role-card[data-color="0"] .task-row { background: #EAF1FF; }
-.role-card[data-color="0"] .task-name-input { color: #1F4ED8; }
-.role-card[data-color="0"] .task-drag-handle { color: #8FAEDD; }
-
-.role-card[data-color="1"] .role-name-input { background: #0E9594; }
-.role-card[data-color="1"] .task-row { background: #E3FAF8; }
-.role-card[data-color="1"] .task-name-input { color: #0F766E; }
-.role-card[data-color="1"] .task-drag-handle { color: #8FD8D4; }
-
-.role-card[data-color="2"] .role-name-input { background: #7C3AED; }
-.role-card[data-color="2"] .task-row { background: #F1E8FE; }
-.role-card[data-color="2"] .task-name-input { color: #6D28D9; }
-.role-card[data-color="2"] .task-drag-handle { color: #C4A6F5; }
-
-.role-card[data-color="3"] .role-name-input { background: #D97706; }
-.role-card[data-color="3"] .task-row { background: #FFF3E0; }
-.role-card[data-color="3"] .task-name-input { color: #B45309; }
-.role-card[data-color="3"] .task-drag-handle { color: #F0C28A; }
-
-.role-card[data-color="4"] .role-name-input { background: #DB2777; }
-.role-card[data-color="4"] .task-row { background: #FCE7F3; }
-.role-card[data-color="4"] .task-name-input { color: #BE185D; }
-.role-card[data-color="4"] .task-drag-handle { color: #F0A0C6; }
-
-.role-card[data-color="5"] .role-name-input { background: #16A34A; }
-.role-card[data-color="5"] .task-row { background: #E6F7EC; }
-.role-card[data-color="5"] .task-name-input { color: #15803D; }
-.role-card[data-color="5"] .task-drag-handle { color: #93D9AE; }
-
-.role-card[data-color="6"] .role-name-input { background: #475569; }
-.role-card[data-color="6"] .task-row { background: #EEF1F5; }
-.role-card[data-color="6"] .task-name-input { color: #334155; }
-.role-card[data-color="6"] .task-drag-handle { color: #AEB7C4; }
 .role-name-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(23,99,216,0.35);
@@ -171,12 +136,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #F4F7FC;
+  background: #F1E8FE;
   border-radius: 7px;
   padding: 1px 4px 1px 8px;
 }
 .detail-bullet {
-  color: #B0BCD0;
+  color: #C4A6F5;
   font-size: 11px;
   flex-shrink: 0;
 }
@@ -188,7 +153,7 @@
   padding: 0 4px;
   font-size: 12px;
   font-weight: 500;
-  color: #4B5563;
+  color: #6D28D9;
   font-family: inherit;
 }
 .detail-name-input:focus {
