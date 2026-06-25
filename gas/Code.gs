@@ -98,14 +98,25 @@ function doPost(e) {
   return jsonOutput_({ ok: true });
 }
 
-// Older deployments briefly wrote the whole {name, details} task object into
-// the TaskName cell, which Apps Script coerces to a Java-map-style string
-// like "{name=外出訪談, details=[...]}". Strip that wrapper if present so
-// stale rows display the original name instead of the raw object dump.
-function sanitizeLegacyName_(raw) {
+// An even older deployment crammed both the name and the comma-joined
+// details list into the TaskName cell as "{name=X, details=A,B,C}" instead
+// of using a separate TaskDetails column. Parse that back into
+// { name, details } so old rows still show a clean name and don't lose
+// their detail list. Plain cells (no such wrapper) pass through unchanged
+// with an empty details list.
+function parseLegacyTaskCell_(raw) {
   var s = String(raw || '');
-  var m = s.match(/^\{\s*name\s*=\s*([\s\S]*?)\s*,\s*details\s*=[\s\S]*\}$/);
-  return m ? m[1] : s;
+  var m = s.match(/^\{\s*name\s*=\s*([\s\S]*?)\s*,\s*details\s*=([\s\S]*?)\s*\}$/);
+  if (!m) return { name: s, details: [] };
+  var detailsStr = m[2];
+  var details = detailsStr
+    ? detailsStr.split(',').map(function (d) { return d.trim(); }).filter(function (d) { return d !== ''; })
+    : [];
+  return { name: m[1], details: details };
+}
+
+function sanitizeLegacyName_(raw) {
+  return parseLegacyTaskCell_(raw).name;
 }
 
 // roles = [ { name: '角色名稱', tasks: [ { name: '工作項目', details: ['細節', ...] }, ... ] }, ... ]
@@ -118,20 +129,21 @@ function getRoles_() {
   for (var i = 1; i < rows.length; i++) {
     var roleOrder = rows[i][0];
     var roleName = sanitizeLegacyName_(rows[i][1]);
-    var taskName = sanitizeLegacyName_(rows[i][3]);
     var taskDetailsRaw = rows[i][4];
+    var taskCell = parseLegacyTaskCell_(rows[i][3]);
+    var taskName = taskCell.name;
     if (roleOrder === '' || roleOrder === null || roleOrder === undefined) continue;
     if (!roleByOrder[roleOrder]) {
       roleByOrder[roleOrder] = { name: roleName, tasks: [] };
       roleOrders.push(roleOrder);
     }
     if (taskName !== '' && taskName !== null && taskName !== undefined) {
-      var details = [];
+      var details = taskCell.details;
       if (taskDetailsRaw) {
         try {
           details = JSON.parse(taskDetailsRaw);
         } catch (err) {
-          details = [];
+          // fall back to whatever parseLegacyTaskCell_ extracted above
         }
       }
       roleByOrder[roleOrder].tasks.push({ name: taskName, details: details });
@@ -144,29 +156,44 @@ function getRoles_() {
 
 // One-time cleanup: run this manually from the Apps Script editor (select
 // fixLegacyRolesData in the function dropdown and click Run) to permanently
-// rewrite any corrupted "{name=..., details=...}" cells in RolesData back to
-// plain names, instead of relying on sanitizeLegacyName_ on every read.
+// rewrite any corrupted "{name=..., details=...}" cells in RolesData into
+// proper RoleName/TaskName/TaskDetails columns, instead of relying on
+// parseLegacyTaskCell_ on every read.
 function fixLegacyRolesData() {
   var sheet = getRolesSheet_();
   var range = sheet.getDataRange();
   var rows = range.getValues();
+  var numCols = Math.max(rows[0].length, ROLES_HEADER.length);
   var changed = false;
 
+  if (rows[0].length < ROLES_HEADER.length) {
+    rows[0] = ROLES_HEADER;
+    changed = true;
+  }
+
   for (var i = 1; i < rows.length; i++) {
-    var cleanRoleName = sanitizeLegacyName_(rows[i][1]);
-    var cleanTaskName = sanitizeLegacyName_(rows[i][3]);
-    if (cleanRoleName !== rows[i][1]) {
-      rows[i][1] = cleanRoleName;
+    var row = rows[i];
+    while (row.length < numCols) row.push('');
+
+    var cleanRoleName = sanitizeLegacyName_(row[1]);
+    if (cleanRoleName !== row[1]) {
+      row[1] = cleanRoleName;
       changed = true;
     }
-    if (cleanTaskName !== rows[i][3]) {
-      rows[i][3] = cleanTaskName;
+
+    var taskCell = parseLegacyTaskCell_(row[3]);
+    if (taskCell.name !== row[3]) {
+      row[3] = taskCell.name;
+      changed = true;
+    }
+    if (taskCell.details.length && !row[4]) {
+      row[4] = JSON.stringify(taskCell.details);
       changed = true;
     }
   }
 
   if (changed) {
-    range.setValues(rows);
+    sheet.getRange(1, 1, rows.length, numCols).setValues(rows);
   }
   return changed;
 }
