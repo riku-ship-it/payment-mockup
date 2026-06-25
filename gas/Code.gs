@@ -18,6 +18,9 @@ var SHEET_NAME = 'ConfigData';
 var TYPE_KEYS = ['companyDomestic', 'individualDomestic', 'companyForeign', 'individualForeign'];
 var HEADER = ['Type', 'Name', 'HasFormula', 'Rate', 'Payee'];
 
+var ROLES_SHEET_NAME = 'RolesData';
+var ROLES_HEADER = ['RoleOrder', 'RoleName', 'TaskOrder', 'TaskName'];
+
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -28,12 +31,25 @@ function getSheet_() {
   return sheet;
 }
 
+function getRolesSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(ROLES_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(ROLES_SHEET_NAME);
+    sheet.appendRow(ROLES_HEADER);
+  }
+  return sheet;
+}
+
 function jsonOutput_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.type === 'roles') {
+    return jsonOutput_(getRoles_());
+  }
   var sheet = getSheet_();
   var rows = sheet.getDataRange().getValues();
   var config = {};
@@ -58,6 +74,9 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  if (e && e.parameter && e.parameter.type === 'roles') {
+    return jsonOutput_(saveRoles_(JSON.parse(e.postData.contents)));
+  }
   var config = JSON.parse(e.postData.contents);
   var sheet = getSheet_();
 
@@ -77,4 +96,55 @@ function doPost(e) {
   }
 
   return jsonOutput_({ ok: true });
+}
+
+// roles = [ { name: '角色名稱', tasks: ['工作項目', ...] }, ... ]
+function getRoles_() {
+  var sheet = getRolesSheet_();
+  var rows = sheet.getDataRange().getValues();
+  var roleByOrder = {};
+  var roleOrders = [];
+
+  for (var i = 1; i < rows.length; i++) {
+    var roleOrder = rows[i][0];
+    var roleName = rows[i][1];
+    var taskName = rows[i][3];
+    if (roleOrder === '' || roleOrder === null || roleOrder === undefined) continue;
+    if (!roleByOrder[roleOrder]) {
+      roleByOrder[roleOrder] = { name: String(roleName || ''), tasks: [] };
+      roleOrders.push(roleOrder);
+    }
+    if (taskName !== '' && taskName !== null && taskName !== undefined) {
+      roleByOrder[roleOrder].tasks.push(String(taskName));
+    }
+  }
+
+  roleOrders.sort(function (a, b) { return Number(a) - Number(b); });
+  return { roles: roleOrders.map(function (o) { return roleByOrder[o]; }) };
+}
+
+function saveRoles_(data) {
+  var roles = (data && data.roles) || [];
+  var sheet = getRolesSheet_();
+
+  sheet.clearContents();
+  sheet.appendRow(ROLES_HEADER);
+
+  var rowsToWrite = [];
+  roles.forEach(function (role, roleIdx) {
+    var tasks = role.tasks || [];
+    if (tasks.length === 0) {
+      rowsToWrite.push([roleIdx, role.name, '', '']);
+    } else {
+      tasks.forEach(function (task, taskIdx) {
+        rowsToWrite.push([roleIdx, role.name, taskIdx, task]);
+      });
+    }
+  });
+
+  if (rowsToWrite.length) {
+    sheet.getRange(2, 1, rowsToWrite.length, ROLES_HEADER.length).setValues(rowsToWrite);
+  }
+
+  return { ok: true };
 }

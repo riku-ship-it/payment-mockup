@@ -1,0 +1,159 @@
+/* 角色與職務 樣式 */
+#page-roles {
+  padding: 40px 24px;
+  background: #ECEEF1;
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", -apple-system, sans-serif;
+  color: #1F2937;
+  min-height: 100%;
+}
+.roles-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.roles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.roles-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #16213A;
+}
+.roles-sub {
+  font-size: 12px;
+  color: #8A8F98;
+  margin-top: 4px;
+}
+.roles-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.roles-board {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.role-card {
+  width: 240px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 14px;
+  flex-shrink: 0;
+}
+.role-card.dragging {
+  opacity: 0.4;
+}
+.role-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.role-drag-handle {
+  cursor: grab;
+  color: #B0B5BD;
+  font-size: 14px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.role-name-input {
+  flex: 1;
+  height: 38px;
+  border: none;
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #1763D8;
+  font-family: inherit;
+}
+.role-name-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(23,99,216,0.35);
+}
+.role-del-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid #ECECEC;
+  background: #fff;
+  color: #B0B5BD;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.role-del-btn:hover { color: #C0392B; border-color: #F0C4C0; }
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 6px;
+}
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #EAF1FF;
+  border-radius: 9px;
+  padding: 2px 4px 2px 8px;
+}
+.task-row.dragging {
+  opacity: 0.4;
+}
+.task-drag-handle {
+  cursor: grab;
+  color: #8FAEDD;
+  font-size: 12px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.task-name-input {
+  flex: 1;
+  height: 32px;
+  border: none;
+  background: transparent;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1F4ED8;
+  font-family: inherit;
+}
+.task-name-input:focus {
+  outline: none;
+}
+.task-del-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #9AB4E8;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.task-del-btn:hover { color: #C0392B; }
+.task-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px dashed #C7CBD3;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #6B7280;
+  background: #fff;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+}
+.task-add-btn:hover { border-color: #1763D8; color: #1763D8; }
