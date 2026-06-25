@@ -98,6 +98,16 @@ function doPost(e) {
   return jsonOutput_({ ok: true });
 }
 
+// Older deployments briefly wrote the whole {name, details} task object into
+// the TaskName cell, which Apps Script coerces to a Java-map-style string
+// like "{name=外出訪談, details=[...]}". Strip that wrapper if present so
+// stale rows display the original name instead of the raw object dump.
+function sanitizeLegacyName_(raw) {
+  var s = String(raw || '');
+  var m = s.match(/^\{\s*name\s*=\s*([\s\S]*?)\s*,\s*details\s*=[\s\S]*\}$/);
+  return m ? m[1] : s;
+}
+
 // roles = [ { name: '角色名稱', tasks: [ { name: '工作項目', details: ['細節', ...] }, ... ] }, ... ]
 function getRoles_() {
   var sheet = getRolesSheet_();
@@ -107,12 +117,12 @@ function getRoles_() {
 
   for (var i = 1; i < rows.length; i++) {
     var roleOrder = rows[i][0];
-    var roleName = rows[i][1];
-    var taskName = rows[i][3];
+    var roleName = sanitizeLegacyName_(rows[i][1]);
+    var taskName = sanitizeLegacyName_(rows[i][3]);
     var taskDetailsRaw = rows[i][4];
     if (roleOrder === '' || roleOrder === null || roleOrder === undefined) continue;
     if (!roleByOrder[roleOrder]) {
-      roleByOrder[roleOrder] = { name: String(roleName || ''), tasks: [] };
+      roleByOrder[roleOrder] = { name: roleName, tasks: [] };
       roleOrders.push(roleOrder);
     }
     if (taskName !== '' && taskName !== null && taskName !== undefined) {
@@ -124,12 +134,41 @@ function getRoles_() {
           details = [];
         }
       }
-      roleByOrder[roleOrder].tasks.push({ name: String(taskName), details: details });
+      roleByOrder[roleOrder].tasks.push({ name: taskName, details: details });
     }
   }
 
   roleOrders.sort(function (a, b) { return Number(a) - Number(b); });
   return { roles: roleOrders.map(function (o) { return roleByOrder[o]; }) };
+}
+
+// One-time cleanup: run this manually from the Apps Script editor (select
+// fixLegacyRolesData in the function dropdown and click Run) to permanently
+// rewrite any corrupted "{name=..., details=...}" cells in RolesData back to
+// plain names, instead of relying on sanitizeLegacyName_ on every read.
+function fixLegacyRolesData() {
+  var sheet = getRolesSheet_();
+  var range = sheet.getDataRange();
+  var rows = range.getValues();
+  var changed = false;
+
+  for (var i = 1; i < rows.length; i++) {
+    var cleanRoleName = sanitizeLegacyName_(rows[i][1]);
+    var cleanTaskName = sanitizeLegacyName_(rows[i][3]);
+    if (cleanRoleName !== rows[i][1]) {
+      rows[i][1] = cleanRoleName;
+      changed = true;
+    }
+    if (cleanTaskName !== rows[i][3]) {
+      rows[i][3] = cleanTaskName;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    range.setValues(rows);
+  }
+  return changed;
 }
 
 function saveRoles_(data) {
