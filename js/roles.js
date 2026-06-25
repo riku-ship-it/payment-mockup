@@ -33,7 +33,16 @@ function seedRoles(plain) {
   ROLES = plain.map(r => ({
     id: rolesNextId(),
     name: r.name,
-    tasks: (r.tasks || []).map(t => ({ id: rolesNextId(), name: t }))
+    tasks: (r.tasks || []).map(t => {
+      const isObj = t && typeof t === "object";
+      const details = (isObj ? t.details : []) || [];
+      return {
+        id: rolesNextId(),
+        name: isObj ? (t.name || "") : t,
+        expanded: false,
+        details: details.map(d => ({ id: rolesNextId(), name: d }))
+      };
+    })
   }));
 }
 
@@ -74,7 +83,7 @@ function updateRoleName(roleId, value) {
 function addTask(roleId) {
   const role = findRole(roleId);
   if (!role) return;
-  role.tasks.push({ id: rolesNextId(), name: "新工作項目" });
+  role.tasks.push({ id: rolesNextId(), name: "新工作項目", expanded: false, details: [] });
   renderRoles();
 }
 
@@ -90,6 +99,41 @@ function updateTaskName(roleId, taskId, value) {
   if (!role) return;
   const task = role.tasks.find(t => t.id === taskId);
   if (task) task.name = value;
+}
+
+function findTask(roleId, taskId) {
+  const role = findRole(roleId);
+  if (!role) return null;
+  return role.tasks.find(t => t.id === taskId) || null;
+}
+
+function toggleTaskExpanded(roleId, taskId) {
+  const task = findTask(roleId, taskId);
+  if (!task) return;
+  task.expanded = !task.expanded;
+  renderRoles();
+}
+
+function addDetail(roleId, taskId) {
+  const task = findTask(roleId, taskId);
+  if (!task) return;
+  task.expanded = true;
+  task.details.push({ id: rolesNextId(), name: "" });
+  renderRoles();
+}
+
+function removeDetail(roleId, taskId, detailId) {
+  const task = findTask(roleId, taskId);
+  if (!task) return;
+  task.details = task.details.filter(d => d.id !== detailId);
+  renderRoles();
+}
+
+function updateDetailName(roleId, taskId, detailId, value) {
+  const task = findTask(roleId, taskId);
+  if (!task) return;
+  const detail = task.details.find(d => d.id === detailId);
+  if (detail) detail.name = value;
 }
 
 function syncRolesOrderFromDom() {
@@ -132,18 +176,53 @@ function renderRoles() {
     taskList.className = "task-list";
 
     role.tasks.forEach(task => {
+      const wrap = document.createElement("div");
+      wrap.className = "task-wrap";
+      wrap.dataset.taskId = task.id;
+
       const row = document.createElement("div");
       row.className = "task-row";
-      row.draggable = true;
       row.dataset.taskId = task.id;
+      const hasDetails = task.details.length > 0;
       row.innerHTML =
         '<span class="task-drag-handle">⠿</span>' +
+        '<button class="task-expand-btn' + (hasDetails ? "" : " is-empty") + '">' + (task.expanded ? "▾" : "▸") + '</button>' +
         '<input type="text" class="task-name-input" value="' + escapeHtml(task.name) + '">' +
         '<button class="task-del-btn">✕</button>';
       row.querySelector(".task-name-input").addEventListener("input", e => updateTaskName(role.id, task.id, e.target.value));
       row.querySelector(".task-del-btn").addEventListener("click", () => removeTask(role.id, task.id));
-      attachTaskDrag(row, taskList);
-      taskList.appendChild(row);
+      row.querySelector(".task-expand-btn").addEventListener("click", () => toggleTaskExpanded(role.id, task.id));
+      wrap.draggable = true;
+      attachTaskDrag(wrap, taskList);
+      wrap.appendChild(row);
+
+      if (task.expanded) {
+        const detailList = document.createElement("div");
+        detailList.className = "detail-list";
+
+        task.details.forEach(detail => {
+          const detailRow = document.createElement("div");
+          detailRow.className = "detail-row";
+          detailRow.dataset.detailId = detail.id;
+          detailRow.innerHTML =
+            '<span class="detail-bullet">•</span>' +
+            '<input type="text" class="detail-name-input" placeholder="細節說明" value="' + escapeHtml(detail.name) + '">' +
+            '<button class="detail-del-btn">✕</button>';
+          detailRow.querySelector(".detail-name-input").addEventListener("input", e => updateDetailName(role.id, task.id, detail.id, e.target.value));
+          detailRow.querySelector(".detail-del-btn").addEventListener("click", () => removeDetail(role.id, task.id, detail.id));
+          detailList.appendChild(detailRow);
+        });
+
+        const addDetailBtn = document.createElement("button");
+        addDetailBtn.className = "detail-add-btn";
+        addDetailBtn.textContent = "＋ 新增細節";
+        addDetailBtn.addEventListener("click", () => addDetail(role.id, task.id));
+        detailList.appendChild(addDetailBtn);
+
+        wrap.appendChild(detailList);
+      }
+
+      taskList.appendChild(wrap);
     });
 
     card.appendChild(taskList);
@@ -214,7 +293,12 @@ function saveRoles() {
     alert("尚未設定 GAS_URL，請先依 gas/Code.gs 的說明部署後端並填入網址");
     return;
   }
-  const payload = { roles: ROLES.map(r => ({ name: r.name, tasks: r.tasks.map(t => t.name) })) };
+  const payload = {
+    roles: ROLES.map(r => ({
+      name: r.name,
+      tasks: r.tasks.map(t => ({ name: t.name, details: t.details.map(d => d.name) }))
+    }))
+  };
   fetch(ROLES_GAS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
