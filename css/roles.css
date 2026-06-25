@@ -37,7 +37,9 @@
   display: flex;
   gap: 18px;
   align-items: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 .role-card {
   width: 240px;
