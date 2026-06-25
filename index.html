@@ -148,45 +148,9 @@
         <div class="rm-title">BCI 財務系統・開發路線圖</div>
         <div class="rm-sub">START → GOAL　點擊節點查看內容・點「編輯」可修改並儲存</div>
 
-        <div class="rm-scroll-x">
-          <div class="rm-road">
-            <div class="rm-node rm-done" style="width:84px;height:84px;" onclick="rmShow('start')">
-              <span class="rm-n-ver">START</span><span class="rm-n-ver">v1</span><span class="rm-n-lbl">核心流程</span>
-            </div>
-            <div class="rm-conn-h"></div>
-            <div class="rm-node rm-done" style="width:78px;height:78px;" onclick="rmShow('v2')">
-              <span class="rm-n-ver">v2</span><span class="rm-n-lbl">基礎功能</span>
-            </div>
-            <div class="rm-conn-h"></div>
-            <div class="rm-burst-wrap">
-              <svg class="rm-burst-svg" width="130" height="130" viewBox="0 0 130 130">
-                <polygon points="65,2 72,46 110,22 88,60 128,65 88,70 110,108 72,84 65,128 58,84 20,108 42,70 2,65 42,60 20,22 58,46" fill="#ffe066" opacity="0.4" stroke="#b87800" stroke-width="1"/>
-              </svg>
-              <div class="rm-node rm-active" style="width:98px;height:98px;position:relative;z-index:1;" onclick="rmShow('v3')">
-                <span class="rm-n-ver">v3</span><span class="rm-n-lbl">稅金計算</span><span class="rm-n-lbl">完整化</span>
-              </div>
-              <div class="rm-blocker-tag">⚠ 卡關・待財務確認</div>
-            </div>
-            <div class="rm-conn-h"></div>
-            <div class="rm-fork-col">
-              <div class="rm-node rm-next" style="width:78px;height:78px;" onclick="rmShow('v4')">
-                <span class="rm-n-ver">v4</span><span class="rm-n-lbl">付款憑單</span><span class="rm-n-lbl">整合</span>
-              </div>
-              <div class="rm-fork-bridge"></div>
-              <div class="rm-node rm-next" style="width:78px;height:78px;" onclick="rmShow('v5')">
-                <span class="rm-n-ver">v5</span><span class="rm-n-lbl">審核編輯</span><span class="rm-n-lbl">＆軌跡</span>
-              </div>
-            </div>
-            <div class="rm-conn-h"></div>
-            <div class="rm-node rm-later" style="width:78px;height:78px;" onclick="rmShow('v6')">
-              <span class="rm-n-ver">v6</span><span class="rm-n-lbl">報表搜尋</span><span class="rm-n-lbl">優化</span>
-            </div>
-            <div class="rm-conn-h"></div>
-            <div class="rm-node rm-goal-n" style="width:88px;height:88px;" onclick="rmShow('goal')">
-              <span class="rm-n-ver">GOAL</span><span class="rm-n-lbl">財務系統</span><span class="rm-n-lbl">全面上線</span>
-            </div>
-          </div>
-        </div>
+        <div class="rm-road" id="rm-road"></div>
+
+        <button class="rm-add-btn" onclick="rmAddNode()">＋ 新增節點</button>
 
         <div class="rm-panel">
           <div class="rm-panel-header">
@@ -207,6 +171,10 @@
             <div class="rm-edit-field">
               <label>內容（換行即可分段）</label>
               <textarea id="rm-e-body"></textarea>
+            </div>
+            <div class="rm-edit-field">
+              <label>狀態（決定節點顏色）</label>
+              <select id="rm-e-status"></select>
             </div>
             <div class="rm-edit-actions">
               <button class="rm-cancel-btn" onclick="rmCancelEdit()">取消</button>
